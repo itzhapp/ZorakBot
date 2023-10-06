@@ -20,16 +20,6 @@ class Points(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member):  # pylint: disable=E1101
-        """When a member joins, add them to the DB."""
-        self.bot.db_client.add_user_to_table(member)
-
-    @commands.Cog.listener()
-    async def on_member_remove(self, member: discord.Member):  # pylint: disable=E1101
-        """When a member leaves, remove them from the DB."""
-        self.bot.db_client.remove_user_from_table(member)
-
-    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """When a member sends a message, give them 1 point."""
         if message.author.bot:
@@ -42,21 +32,6 @@ class Points(commands.Cog):
         mod_log = await self.bot.fetch_channel(self.bot.server_settings.log_channel["mod_log"])
         await mod_log.send(f"1 Point removed from {message.author} for deleting a message.")
         self.bot.db_client.remove_points_from_user(message.author.id, 1)
-    #
-    # # TODO: Fix the backup command.
-    # # @commands.slash_command()
-    # # @commands.has_any_role("Staff", "Sudo", "Project Manager")
-    # # async def backup_db(self, ctx):
-    # #     """Backup the MongoDB instance."""
-    # #     self.bot.db_client.backup_db()
-    # #     await ctx.respond("Database backed up.")
-
-    @commands.slash_command()
-    @commands.has_any_role("Admin", "Sudo", "Staff", "Project Manager")
-    async def add_all_members_to_db(self, ctx):
-        """Add all members to the database."""
-        self.bot.db_client.create_table_from_members(ctx.guild.members)
-        await ctx.respond("All members added to database.")
 
     @commands.slash_command()
     @commands.has_any_role("Admin", "Sudo", "Staff", "Project Manager")

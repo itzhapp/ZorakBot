@@ -195,10 +195,43 @@ class CustomMongoDBClient(MongoDBClient):
 
     def initialise_user_table(self):
         """Initialise the user table. Ensures that the UserID field is unique."""
+        #  TODO: Set up a sync job to update data in users table
+        validator = {
+            "bsonType": "object",
+            "title": "User Collection Validation",
+            "required": ["UserID", "Name", "DisplayName", "Avatar", "JoinedAt"],
+            "properties": {
+                "UserID": {
+                    "bsonType": "long",
+                    "description": "The ID of the user.",
+                },
+                "Name": {
+                    "bsonType": "String",
+                    "description": "The base name of a user.",
+                },
+                "DisplayName": {
+                    "bsonType": "String",
+                    "description": "The display name of the user.",
+                },
+                "Avatar": {
+                    "bsonType": "String",
+                    "description": "A url of the users avatar.",
+                },
+                "JoinedAt": {
+                    "bsonType": "Date",
+                    "description": "A timestamp of the users join date.",
+                },
+            },
+        }
+        self.create_collection("Users", validator_schema=validator)
+        logger.info("User table initialised.")
+
+    def initialise_userPoints_table(self):
+        """Initialise the user table. Ensures that the UserID field is unique."""
         validator = {
             "bsonType": "object",
             "title": "Points Collection Validation",
-            "required": ["UserID", "Points"],
+            "required": ["UserID", "Points", ],
             "properties": {
                 "UserID": {
                     "bsonType": "long",
@@ -212,7 +245,7 @@ class CustomMongoDBClient(MongoDBClient):
             },
         }
         self.create_collection("UserPoints", validator_schema=validator)
-        logger.info("User table initialised.")
+        logger.info("Points table initialised.")
 
     def add_user_to_table(self, member):
         """Add a user to the user table if they are not already in it."""
@@ -264,6 +297,13 @@ class CustomMongoDBClient(MongoDBClient):
             return user["Points"]
         return None
 
+    def get_one_user(self, user_id: int):
+        """Get the data of a user."""
+        user = self.find("Users", {"UserID": user_id})
+        if user:
+            return user
+        return None
+
     def get_top_10(self):
         """Get the top 10 point earners."""
         top10 = []
@@ -271,8 +311,6 @@ class CustomMongoDBClient(MongoDBClient):
         for x in self.find("UserPoints").sort("Points", -1).limit(20):
             top10.append(x)
         return top10
-
-    # Used for the RSS_feeds cog
 
     def initialise_news_table(self):
         """Initialise the news table."""
@@ -324,7 +362,9 @@ def initialise_bot_db(
             attempts += 1
     if connected:
         logger.info("Connected to database.")
-        db_client.initialise_user_table()  # type: ignore
+        db_client.initialise_user_table()  #type: ignore
+
+        db_client.initialise_userPoints_table()  # type: ignore
         # This makes the table if it doesn't exist
         # and ensures the validation rules.
         db_client.initialise_news_table()  # type: ignore
